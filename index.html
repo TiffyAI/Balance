@@ -65,20 +65,15 @@
   <div id="aiAdvice">AI insights will show here after checking.</div>
 
   <script>
-    const contractAddress = '0xE488253DD6B4D31431142F1b7601C96f24Fb7dd5';
+    const contractAddress = '0xE488253DD6B4D31431142F1b7601C96f24Fb7dd5'; // TIFFY token on BSC Mainnet
+    const DECIMALS = 18;
+
     const contractABI = [
       {
         "constant": true,
-        "inputs": [{"name": "owner", "type": "address"}],
+        "inputs": [{ "name": "owner", "type": "address" }],
         "name": "balanceOf",
-        "outputs": [{"name": "balance", "type": "uint256"}],
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [],
-        "name": "decimals",
-        "outputs": [{"name": "", "type": "uint8"}],
+        "outputs": [{ "name": "balance", "type": "uint256" }],
         "type": "function"
       }
     ];
@@ -98,14 +93,13 @@
         const web3 = new Web3('https://bsc-dataseed.binance.org/');
         const contract = new web3.eth.Contract(contractABI, contractAddress);
 
-        const [rawBalance, decimals, priceResponse] = await Promise.all([
+        const [rawBalance, priceData] = await Promise.all([
           contract.methods.balanceOf(address).call(),
-          contract.methods.decimals().call(),
-          fetch('https://tiffyai.github.io/TIFFY-Market-Value/price.json').then(r => r.json())
+          fetch('https://tiffyai.github.io/TIFFY-Market-Value/price.json').then(res => res.json())
         ]);
 
-        const balance = parseFloat(rawBalance) / Math.pow(10, decimals);
-        const price = parseFloat(priceResponse.tiffyToUSD || 0);
+        const balance = parseFloat(rawBalance) / Math.pow(10, DECIMALS);
+        const price = parseFloat(priceData.tiffyToUSD || 0);
         const value = balance * price;
 
         balanceEl.textContent = `Balance: ${balance.toFixed(6)} TIFFY ($${value.toFixed(2)})`;
@@ -120,8 +114,8 @@
           adviceEl.textContent = "Legendary holder status. Consider staking or trading wisely!";
         }
 
-      } catch (e) {
-        console.error(e);
+      } catch (err) {
+        console.error("Fetch error:", err);
         balanceEl.textContent = "Could not fetch data.";
         adviceEl.textContent = "Something went wrong. Try again later.";
       }
