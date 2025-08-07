@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Queen TiffyAI Wallet Checker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: url('Back.jpeg') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+      text-align: center;
+      padding: 40px 20px;
+      backdrop-filter: blur(3px);
+    }
+
+    h1 {
+      color: #ff66cc;
+      text-shadow: 0 0 12px #ff66cc, 0 0 22px #00ccff;
+      font-size: 2.2em;
+      margin-bottom: 25px;
+    }
+
+    input {
+      width: 90%;
+      max-width: 400px;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      font-size: 16px;
+      backdrop-filter: blur(5px);
+      outline: none;
+    }
+
+    button {
+      padding: 14px 28px;
+      border: none;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 16px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 0 10px #00ccff, 0 0 20px #ff66cc;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background: rgba(0, 255, 255, 0.15);
+      box-shadow: 0 0 15px #ff66cc, 0 0 25px #00ccff;
+    }
+
+    #balance {
+      font-size: 22px;
+      margin-top: 25px;
+      color: #fff;
+      text-shadow: 0 0 10px #ff66cc, 0 0 18px #00ccff;
+    }
+
+    #aiAdvice {
+      font-size: 18px;
+      margin-top: 20px;
+      background: rgba(255, 255, 255, 0.08);
+      border-left: 4px solid #ff66cc;
+      padding: 15px;
+      border-radius: 10px;
+      color: #fff;
+      text-shadow: 0 0 8px #00ccff;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      backdrop-filter: blur(4px);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>👑 Queen TiffyAI Balance Scanner</h1>
+
+  <input id="wallet" type="text" placeholder="Enter your BNB wallet address">
+  <br>
+  <button onclick="checkBalance()">Scan My Wallet</button>
+
+  <div id="balance">👀 Your cosmic TIFFY balance will glow here.</div>
+  <div id="aiAdvice">✨ Awaiting AI intel from the stars...</div>
+
+  <script>
+    const contractAddress = '0xE488253DD6B4D31431142F1b7601C96f24Fb7dd5';
+    const DECIMALS = 18;
+
+    const contractABI = [
+      {
+        "constant": true,
+        "inputs": [{ "name": "owner", "type": "address" }],
+        "name": "balanceOf",
+        "outputs": [{ "name": "balance", "type": "uint256" }],
+        "type": "function"
+      }
+    ];
+
+    async function checkBalance() {
+      const address = document.getElementById("wallet").value.trim();
+      const balanceEl = document.getElementById("balance");
+      const adviceEl = document.getElementById("aiAdvice");
+
+      if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+        balanceEl.textContent = "🚫 Invalid wallet address detected in the cosmos.";
+        adviceEl.textContent = "AI Tiffy: Darling, I need something real to work with 💅";
+        return;
+      }
+
+      try {
+        const web3 = new Web3('https://bsc-dataseed.binance.org/');
+        const contract = new web3.eth.Contract(contractABI, contractAddress);
+
+        const [rawBalance, priceData] = await Promise.all([
+          contract.methods.balanceOf(address).call(),
+          fetch('https://tiffyai.github.io/TIFFY-Market-Value/price.json').then(res => res.json())
+        ]);
+
+        const balance = parseFloat(rawBalance) / Math.pow(10, DECIMALS);
+        const price = parseFloat(priceData.tiffyToUSD || 0);
+        const value = balance * price;
+
+        balanceEl.textContent = `💎 Balance: ${balance.toFixed(6)} TIFFY ($${value.toFixed(2)} USD)`;
+
+        // AI Queen Tiffy speaks
+        if (balance === 0) {
+          adviceEl.textContent = "AI Tiffy: No TIFFY yet, hun? Time to sparkle up that wallet! 💫";
+        } else if (balance < 1) {
+          adviceEl.textContent = "AI Tiffy: A gentle start, but Queen energy is rising 🌙";
+        } else if (balance < 10) {
+          adviceEl.textContent = "AI Tiffy: Now we're getting regal! Keep stacking, Queen 👑";
+        } else {
+          adviceEl.textContent = "AI Tiffy: Legendary goddess detected. Your empire glows! 💥";
+        }
+
+      } catch (err) {
+        console.error("Fetch error:", err);
+        balanceEl.textContent = "⚠️ Unable to read cosmic data.";
+        adviceEl.textContent = "AI Tiffy: Even stars go dark sometimes. Try again, Queen ✨";
+      }
+    }
+  </script>
+</body>
+</html>
