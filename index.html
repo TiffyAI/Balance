@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TiffyAI Wallet Checker + AI Assistant</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: radial-gradient(circle, #001f3f, #000814);
+      color: #fff;
+      text-align: center;
+      padding: 30px 15px;
+    }
+
+    h1 {
+      color: #00ccff;
+      margin-bottom: 15px;
+    }
+
+    input {
+      width: 90%;
+      max-width: 400px;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      padding: 12px 24px;
+      border: none;
+      background: #00ccff;
+      color: #000;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    #balance, #aiAdvice {
+      font-size: 18px;
+      margin-top: 10px;
+    }
+
+    #aiAdvice {
+      background: rgba(0, 255, 255, 0.1);
+      border-left: 3px solid #00ccff;
+      padding: 10px;
+      margin-top: 20px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>TiffyAI Balance Checker</h1>
+
+  <input id="wallet" type="text" placeholder="Enter your BNB wallet address">
+  <br>
+  <button onclick="checkBalance()">Check Balance</button>
+
+  <div id="balance">Your TIFFY Balance will appear here.</div>
+  <div id="aiAdvice">AI insights will show here after checking.</div>
+
+  <script>
+    const contractAddress = '0xE488253DD6B4D31431142F1b7601C96f24Fb7dd5';
+    const contractABI = [
+      {
+        "constant": true,
+        "inputs": [{"name": "owner", "type": "address"}],
+        "name": "balanceOf",
+        "outputs": [{"name": "balance", "type": "uint256"}],
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "decimals",
+        "outputs": [{"name": "", "type": "uint8"}],
+        "type": "function"
+      }
+    ];
+
+    async function checkBalance() {
+      const address = document.getElementById("wallet").value.trim();
+      const balanceEl = document.getElementById("balance");
+      const adviceEl = document.getElementById("aiAdvice");
+
+      if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+        balanceEl.textContent = "Please enter a valid BNB address.";
+        adviceEl.textContent = "AI cannot help with an invalid address.";
+        return;
+      }
+
+      try {
+        const web3 = new Web3('https://bsc-dataseed.binance.org/');
+        const contract = new web3.eth.Contract(contractABI, contractAddress);
+
+        const [rawBalance, decimals, priceResponse] = await Promise.all([
+          contract.methods.balanceOf(address).call(),
+          contract.methods.decimals().call(),
+          fetch('https://tiffyai.github.io/TIFFY-Market-Value/price.json').then(r => r.json())
+        ]);
+
+        const balance = parseFloat(rawBalance) / Math.pow(10, decimals);
+        const price = parseFloat(priceResponse.tiffyToUSD || 0);
+        const value = balance * price;
+
+        balanceEl.textContent = `Balance: ${balance.toFixed(6)} TIFFY ($${value.toFixed(2)})`;
+
+        if (balance === 0) {
+          adviceEl.textContent = "You don't own any TiffyAI yet. Great time to get started!";
+        } else if (balance < 1) {
+          adviceEl.textContent = "You're just getting started! Build your TiffyAI stash.";
+        } else if (balance < 10) {
+          adviceEl.textContent = "Nice! You're on your way to becoming a TiffyAI knight!";
+        } else {
+          adviceEl.textContent = "Legendary holder status. Consider staking or trading wisely!";
+        }
+
+      } catch (e) {
+        console.error(e);
+        balanceEl.textContent = "Could not fetch data.";
+        adviceEl.textContent = "Something went wrong. Try again later.";
+      }
+    }
+  </script>
+</body>
+</html>
